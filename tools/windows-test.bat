@@ -1,5 +1,5 @@
 :: #############################################
-:: Running this script will show you a vivid colorful demo of lzmw. 
+:: Running this script will show you a vivid colorful demo of lzmw.
 :: This script calls the commands/lines in example-commands.bat which can be directly executed.
 :: The difference to example-commands.bat is that this script can also :
 ::  1) Test reading/replacing in files and pipe by following 'Reading from file test' and 'Reading from pipe test'.
@@ -27,7 +27,7 @@ if "%1" == "-h" (
     echo Usage   : %0  IsSavingToFile  lzmwName   SleepSeconds  ReplaceTo
     echo Example : %0       -- directly test and output on this command window, using lzmw.
     echo Example : %0   1   -- output to files and compare with base-windows-**.log, using lzmw.
-    echo Example : %0   0              lzmw           3    -- output to window, sleep 3 seconds for each execution. 
+    echo Example : %0   0              lzmw           3    -- output to window, sleep 3 seconds for each execution.
     echo Example : %0   0              lzmwdbg        3             -cA
     exit /b 0
 )
@@ -36,38 +36,43 @@ if "%lzmwName%" == "" set lzmwName=lzmw
 if "%SleepSeconds%" == "" set SleepSeconds=3
 
 if "%~4" == "" (
-	if "%IsSavingToFile%" == "1" (set ReplaceTo=-cA) else (set ReplaceTo=-c)
+	set "ReplaceTo=-c"
 )
 
 set lzmwThis=%lzmwName%
 
+:: Check and add tool directory to %PATH% in case of no lzmw.exe
+%lzmwThis% -z "%PATH%" -ix "%CurDir%;" -PAC >nul -- Can also use -H 0 to hide result and -M to hide summary.
+if %ERRORLEVEL% LSS 1 SET "PATH=%PATH%;%CurDir%;"
+
 set StopCalling="::Stop calling"
-set FirstReplace=%lzmwName% -it "lzmw -c" -o "lzmw %ReplaceTo%" -p %SourceFile% --nt "\s+-R\b" -PAC
+set FirstReplaceForFile=%lzmwName% -it "lzmw -c" -o "lzmw %ReplaceTo%" -p %SourceFile% --nt "\s+-R\b" -PAC
+set FirstReplaceForPipe=%lzmwName% -it "lzmw -c" -o "lzmw %ReplaceTo% -A" -p %SourceFile% --nt "\s+-R\b" -PAC
 set ReplaceExeName=%lzmwName% -it "\blzmw\s+" -o "%lzmwName% " -PAC
 ::set ReplaceToCurDirMainCmd=%lzmwName% -ix "%%~dp0" -o "%CurDir2Slash%"
 set ReplaceToCurDirMainCmd=%lzmwName% -ix "%%~dp0" -o %CurDir% -a
 
-:: Need append file like : -p %pipeResult%  or -p %fileResult% 
+:: Need append file like : -p %pipeResult%  or -p %fileResult%
 set UnifyPipeTestExeName=%lzmwName% -it "(\|\s*)%lzmwName%\b" -o "${1}lzmw" -ROc
 set UnifyFileTestExeName=%lzmwName% -it "(^|\|\s+|^\s*echo\s+)%lzmwName%\b" -o "$1lzmw" -ROc
 set UnifyExtraExeName=%lzmwName% -it "%lzmwName% (-cA|-x)" -o "lzmw $1" -ROc
-set RemoveDateTime=%lzmwName% -it "Used\s*\d+.*from\s*\d+.*$" -o "" -ROc
-set UnifyDirectory=%lzmwName% -it "(^|\s+)[\\\\/\w\.:-]+(example-commands.bat|sample-file.txt)" -o "$1$2" -ROc 
-set UnifyCurrentToDot=%lzmwName% -ix "%CurDir%" -o "." -ROc 
+set RemoveDateTimeDir=%lzmwName% -it "Used\s*\d+.*from\s*\d+.*|[,;]*\s*(Directory|command)\s*=.*|[,;]*\s*read\s+\d+\s+line.*" -o "" -ROc
+set UnifyDirectory=%lzmwName% -it "(^|\s+)[\\\\/\w\.:-]+(example-commands.bat|sample-file.txt)" -o "$1$2" -ROc
+set UnifyCurrentToDot=%lzmwName% -ix "%CurDir%" -o "." -ROc
 
 :: Directly test and output result on current command window
 if not "%IsSavingToFile%" == "1" (
     if %SleepSeconds% GTR 0 (
-        :: %FirstReplace% -q %StopCalling%| %ReplaceExeName% | %ReplaceToCurDirMainCmd% -PAC | %lzmwName% -t "^.+$" -o "$0 && sleep %SleepSeconds%" -XI
-        for /F "tokens=*" %%a in ('%FirstReplace% -q %StopCalling% ^| %ReplaceExeName% ^| %ReplaceToCurDirMainCmd% -PAC ') do (
+        :: %FirstReplaceForFile% -q %StopCalling%| %ReplaceExeName% | %ReplaceToCurDirMainCmd% -PAC | %lzmwName% -t "^.+$" -o "$0 && sleep %SleepSeconds%" -XI
+        for /F "tokens=*" %%a in ('%FirstReplaceForFile% -q %StopCalling% ^| %ReplaceExeName% ^| %ReplaceToCurDirMainCmd% -PAC ') do (
             echo %%a | %lzmwThis% -XI 2>nul
-            :: a trick to sleep 
+            :: a trick to sleep
             ping 127.0.0.1 -n %SleepSeconds% -w 1000 > nul 2>nul
             echo.
         )
     )  else (
-        echo %FirstReplace% -q %StopCalling% ^| %ReplaceToCurDirMainCmd% -IX
-        %FirstReplace% -q %StopCalling% | %ReplaceExeName% | %ReplaceToCurDirMainCmd% -I -X
+        echo %FirstReplaceForFile% -q %StopCalling% ^| %ReplaceToCurDirMainCmd% -IX
+        %FirstReplaceForFile% -q %StopCalling% | %ReplaceExeName% | %ReplaceToCurDirMainCmd% -I -X
     )
 
     echo %SourceFile% | %lzmwName% -t .+  -o "findstr xml $0" -XI
@@ -79,9 +84,11 @@ if not "%IsSavingToFile%" == "1" (
 echo ######### Reading from file test begin ######################## | %lzmwThis% -PA -e .+
 set fileResult=%CurDir%\file-test-result-on-windows.log
 if exist %fileResult% del %fileResult%
-for /F "tokens=*" %%a in ('%FirstReplace% -q %StopCalling% ^| %ReplaceExeName% ^| %ReplaceToCurDirMainCmd% -PIC ') do (
+for /F "tokens=*" %%a in ('%FirstReplaceForFile% -q %StopCalling% ^| %ReplaceExeName% ^| %ReplaceToCurDirMainCmd% -PIC ') do (
 	echo %%a >> %fileResult%
 	%%a >> %fileResult%
+	::echo Return = %ERRORLEVEL% >> %fileResult%
+	%%a --verbose 2>&1 | lzmw -it "^(Return\s*=\s*\d+).*" -o "$1" -T 1 -PAC >> %fileResult%
 	echo.>> %fileResult%
 )
 
@@ -94,7 +101,7 @@ echo %lzmwName% -p %SourceFile% -b %StopCalling% --nt %StopCalling% -ix "%%~dp0"
 %lzmwName% -p %SourceFile% -b %StopCalling% --nt %StopCalling% -ix "%%~dp0" -o %CurDir% -a -PAC | %lzmwName% -it "\blzmw\b" -o "%lzmwName%" -a -XPAC >> %fileResult%
 
 %UnifyFileTestExeName% -p %fileResult%
-%RemoveDateTime% -p %fileResult%
+%RemoveDateTimeDir% -p %fileResult%
 %UnifyExtraExeName% -p %fileResult%
 %UnifyDirectory% -p %fileResult%
 %UnifyCurrentToDot% -p %fileResult%
@@ -104,12 +111,11 @@ call :Compare_Title_Files "File test comparison" %CurDir%\base-windows-file-test
 echo. & echo.
 
 set /a allDifferences=0
-
 echo ######### Reading from pipe test begin ######################## | %lzmwThis% -PA -e .+
 set pipeResult=%CurDir%\pipe-test-result-on-windows.log
-%FirstReplace% -q %StopCalling% | %ReplaceExeName% | %ReplaceToCurDirMainCmd% -PAC | %lzmwName% --nt "--wt|--sz"  -it "^(lz.*)\s+-p\s+(\S+)(\s*.*)" -o "type $2 | $1 $3" -XI > %pipeResult%
+%FirstReplaceForPipe% -q %StopCalling% | %ReplaceExeName% | %ReplaceToCurDirMainCmd% -PAC | %lzmwName% --nt "--wt|--sz"  -it "^(lz.*)\s+-p\s+(\S+)(\s*.*)" -o "type $2 | $1 $3" -XI > %pipeResult%
 %UnifyPipeTestExeName% -p %pipeResult%
-%RemoveDateTime% -p %pipeResult%
+%RemoveDateTimeDir% -p %pipeResult%
 %UnifyExtraExeName% -p %pipeResult%
 %UnifyDirectory% -p %pipeResult%
 %UnifyCurrentToDot% -p %pipeResult%
@@ -122,12 +128,12 @@ exit /b %allDifferences%
 :: Call nin.exe to get the differences count which ERRORLEVEL as following. By the way, this is an example of nin.exe .
 :Compare_Title_Files
     :: nin %2 %3 >nul
-    nin %2 %3 -O -I
+    nin %2 %3 -H 0
     set /a diff1=%ERRORLEVEL%
     :: nin %3 %2 >nul
-    nin %3 %2 -O -I
+    nin %2 %3 -H 0 -S
     set /a diff2=%ERRORLEVEL%
-    
+
     if %diff1% EQU %diff2% (
         set /a differences=%diff1%
     ) else (

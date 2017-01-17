@@ -1,5 +1,14 @@
+### Liberate & Digitize daily works by 2 exe : Data Mining; Map-Reduce; Pipe Endless. 
+#### lzmw.exe/lzmw.cygwin/lzmw.gcc**
+- **Search/Replace/Execute/*** Files/Pipe Lines/Blocks.
+- **Filter/Load/Extract/Transform/Stats/*** Files/Pipe Lines/Blocks.
+#### nin.exe/nin.cygwin/nin.gcc**
+- Get **Exclusive/Mutual** Line-Set;
+- **Remove** Lines in later file/pipe;
+- Get **Unique/Mutual/Distribution/Stats/*** Files/Pipe Line-Set.
+
 # 1. lzmw.exe/gcc* overview: (usage/examples: [readme.txt](https://github.com/qualiu/lzmw/tree/master/tools/readme.txt) )
-[**New**] [Performance comparison with findstr and grep ](https://github.com/qualiu/lzmw/tree/master/perf) : [on-Windows-comparison.PNG](https://raw.githubusercontent.com/qualiu/lzmw/master/perf/on-Windows-comparison.PNG) [on-Cygwin-comparison.PNG](https://raw.githubusercontent.com/qualiu/lzmw/master/perf/on-Cygwin-comparison.PNG)
+[Performance comparison with findstr and grep ](https://github.com/qualiu/lzmw/tree/master/perf) : [**on-Windows-comparison.PNG**](https://raw.githubusercontent.com/qualiu/lzmw/master/perf/on-Windows-comparison.PNG) [**on-Cygwin-comparison.PNG**](https://raw.githubusercontent.com/qualiu/lzmw/master/perf/on-Cygwin-comparison.PNG)
 ### [**Vivid Colorful Demo/examples**]: Run [windows-test.bat](https://github.com/qualiu/lzmw/blob/master/tools/windows-test.bat) without parameters.
 Download all by command : **git clone** https://github.com/qualiu/lzmw/
 
